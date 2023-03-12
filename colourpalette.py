@@ -125,6 +125,7 @@ class ColourPicker(tk.Tk):
         self.title('Tk named colour palette')
         #self.geometry('500x750')
         self.TESTING = True
+        self.bind('<Control-q>', lambda e: self.destroy())
         self.read_colours()
         self.show_colours()
 
