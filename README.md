@@ -9,3 +9,5 @@ Tooltips show hex value and names
 Click swatch to copy hex value
 
 Right Click to view more detail (eg. hsv and rgb int values)
+
+![screenshot](/sample.jpg?raw=true "Example screenshot")
