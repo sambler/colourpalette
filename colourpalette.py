@@ -16,6 +16,65 @@ PADDING = 4
 INFOTIP_FG = "#444444"
 INFOTIP_BG = "#ffd966"
 
+class ColourData():
+    def __init__(self, r, g, b, names=[]):
+        self.names = names
+        # expect r,g,b to be same type?
+        if type(r) == int:
+            self.red = r
+            self.green = g
+            self.blue = b
+        elif type(r) == str:
+            # treat str as hex
+            self.red = int(r, 16)
+            self.green = int(g, 16)
+            self.blue = int(b, 16)
+        else:
+            raise ValueError('Unknown rgb values')
+        self.rgb_hex = f'#{self.red:02x}{self.green:02x}{self.blue:02x}'
+
+    def __repr__(self):
+        return self.rgb_hex
+
+    def names(self):
+        return self.names
+
+    def rgb(self):
+        return (self.red, self.green, self.blue)
+
+    def rgb_text(self):
+        return f'R: {self.red}  G: {self.green}  B: {self.blue}'
+
+    def hsv(self):
+        return cs.rgb_to_hsv(self.red, self.green, self.blue)
+
+    def hsv_text(self):
+        cv = self.hsv()
+        return f'H: {cv[0]:.4f}  S: {cv[1]:.4f}  V: {cv[2]:.4f}'
+
+    def yiq(self):
+        return cs.rgb_to_yiq(self.red, self.green, self.blue)
+
+    def yiq_text(self):
+        cv = self.yiq()
+        return f'Y: {cv[0]:.4f}  I: {cv[1]:.4f}  Q: {cv[2]:.4f}'
+
+    def hls(self):
+        return cs.rgb_to_hsv(self.red, self.green, self.blue)
+
+    def hls_text(self):
+        cv = self.hls()
+        return f'H: {cv[0]:.4f}  L: {cv[1]:.4f}  S: {cv[2]:.4f}'
+
+class InfoLabel(ttk.Label):
+    def __init__(self, par, row, col, clipboard, sticky, **kwargs):
+        super().__init__(par, **kwargs)
+        self.grid(row=row, column=col, sticky=sticky, padx=PADDING, pady=PADDING)
+        if clipboard is not None:
+            self.clipText = clipboard
+            self.bind('<Button-1>', par.do_copy)
+            ToolTip(self, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
+
 class ColourInfo(tk.Toplevel):
     """
     Show colour different ways
@@ -30,93 +89,36 @@ class ColourInfo(tk.Toplevel):
         g = int(info[0][1:-1][2:4], 16)
         b = int(info[0][1:-1][4:6], 16)
         c = info[0][:-1]
-        l = ttk.Label(self, text=' ', width=20, background=c)
-        l.grid(row=0, column=1, sticky=tk.W, padx=3, pady=3)
-        l.clipB = c
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
+        colour = ColourData(int(info[0][1:-1][:2], 16),
+                            int(info[0][1:-1][2:4], 16),
+                            int(info[0][1:-1][4:6], 16),
+                            info[1:])
+        InfoLabel(self, 0, 1, colour, sticky=tk.W, width=20, background=colour)
 
-        l = ttk.Label(self, text='Names:')
-        l.grid(row=1, column=0, sticky=tk.E, padx=5, pady=3)
+        InfoLabel(self, 1, 0, None, sticky=tk.E, text='Names:')
 
         for i,ct in enumerate(info[1:]):
-            l = ttk.Label(self, text=ct)
-            l.grid(row=i+1, column=1, sticky=tk.W, padx=3, pady=3)
-            l.clipB = ct
-            l.bind('<Button-1>', self.do_copy)
-            ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
+            InfoLabel(self, i+1, 1, ct, sticky=tk.W, text=ct)
 
-        # html colour
-        l = ttk.Label(self, text='HTML colour:')
-        l.grid(row=10, column=0, sticky=tk.E, padx=5, pady=3)
-        l.clipB = c
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
-        l = ttk.Label(self, text=info[0])
-        l.grid(row=10, column=1, sticky=tk.W, padx=3, pady=3)
-        l.clipB = c
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
+        InfoLabel(self, 30, 0, colour, sticky=tk.E, text='HTML colour:')
+        InfoLabel(self, 30, 1, colour, sticky=tk.W, text=colour)
 
-        # R,G,B values
-        c = f'R: {r}  G: {g}  B: {b}'
-        l = ttk.Label(self, text='RGB:')
-        l.grid(row=20, column=0, sticky=tk.E, padx=5, pady=3)
-        l.clipB = c
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
-        l = ttk.Label(self, text=c)
-        l.grid(row=20, column=1, sticky=tk.W, padx=3, pady=3)
-        l.clipB = c
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
+        InfoLabel(self, 31, 0, colour.rgb(), sticky=tk.E, text='RGB:')
+        InfoLabel(self, 31, 1, colour.rgb_text(), sticky=tk.W, text=colour.rgb_text())
 
-        # HSV values
-        cv = cs.rgb_to_hsv(r,g,b)
-        c = f'H: {cv[0]:.4f}  S: {cv[1]:.4f}  V: {cv[2]:.4f}'
-        l = ttk.Label(self, text='HSV:')
-        l.grid(row=30, column=0, sticky=tk.E, padx=5, pady=3)
-        l.clipB = c
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
-        l = ttk.Label(self, text=c)
-        l.grid(row=30, column=1, sticky=tk.W, padx=3, pady=3)
-        l.clipB = c
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
+        InfoLabel(self, 32, 0, colour.hsv(), sticky=tk.E, text='HSV:')
+        InfoLabel(self, 32, 1, colour.hsv_text(), sticky=tk.W, text=colour.hsv_text())
 
-        # YIQ values
-        cv = cs.rgb_to_yiq(r,g,b)
-        c = f'Y: {cv[0]:.4f}  I: {cv[1]:.4f}  Q: {cv[2]:.4f}'
-        l = ttk.Label(self, text='YIQ:')
-        l.clipB = c
-        l.grid(row=40, column=0, sticky=tk.E, padx=5, pady=3)
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
-        l = ttk.Label(self, text=c)
-        l.clipB = c
-        l.grid(row=40, column=1, sticky=tk.W, padx=3, pady=3)
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
+        InfoLabel(self, 33, 0, colour.yiq(), sticky=tk.E, text='YIQ:')
+        InfoLabel(self, 33, 1, colour.yiq_text(), sticky=tk.W, text=colour.yiq_text())
 
-        # HLS values
-        cv = cs.rgb_to_hsv(r,g,b)
-        c = f'H: {cv[0]:.4f}  L: {cv[1]:.4f}  S: {cv[2]:.4f}'
-        l = ttk.Label(self, text='HLS:')
-        l.grid(row=50, column=0, sticky=tk.E, padx=5, pady=3)
-        l.clipB = c
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
-        l = ttk.Label(self, text=c)
-        l.grid(row=50, column=1, sticky=tk.W, padx=3, pady=3)
-        l.clipB = c
-        l.bind('<Button-1>', self.do_copy)
-        ToolTip(l, msg='Click to copy', follow=False, delay=0, fg=INFOTIP_FG, bg=INFOTIP_BG)
+        InfoLabel(self, 34, 0, colour.hls(), sticky=tk.E, text='HLS:')
+        InfoLabel(self, 34, 1, colour.hls_text(), sticky=tk.W, text=colour.hls_text())
 
     def do_copy(self, evnt):
         if evnt is not None:
             self.master.clipboard_clear()
-            self.master.clipboard_append(evnt.widget.clipB)
+            self.master.clipboard_append(evnt.widget.clipText)
 
 
 class ColourPicker(tk.Tk):
