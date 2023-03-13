@@ -192,7 +192,7 @@ class ColourPicker(tk.Tk):
         for i,c in enumerate(sorted_cols):
             row = i // NUM_COLS
             col = i % NUM_COLS
-            ttip = c + ':\n' + '\n'.join(sorted(self.colours[c]))
+            ttip = c + ':\n' + '\n'.join(sorted(self.colours[c], key=str.lower))
             lbl = ttk.Label(self.colour_grid, text=' ', background=c, width=8)
             lbl.coltip = ttip
             lbl.grid(row=row, column=col, sticky=tk.NSEW)
