@@ -120,6 +120,19 @@ class ColourInfo(tk.Toplevel):
             self.master.clipboard_clear()
             self.master.clipboard_append(evnt.widget.clipText)
 
+def hsv_as_ints(inkey):
+    r,b,g = int(inkey[1:3],16), int(inkey[3:5],16), int(inkey[5:7],16)
+    h,s,v = cs.rgb_to_hsv(r,g,b)
+    # multiply by 1000 to get a range of ints
+    h = int(h*1000)
+    s = int(s*1000)
+    v = int(v*1000)
+    return h,s,v
+
+def sort_hsv(inkey):
+    h,s,v = hsv_as_ints(inkey)
+    sortkey = f'{h:04x}{s:04x}{v:04x}'
+    return sortkey
 
 class ColourPicker(tk.Tk):
     def __init__(self):
@@ -128,6 +141,8 @@ class ColourPicker(tk.Tk):
         #self.geometry('500x750')
         self.TESTING = True
         self.bind('<Control-q>', lambda e: self.destroy())
+        self.bind('<F5>', lambda e: self.show_colours('rgb'))
+        self.bind('<F6>', lambda e: self.show_colours('hsv'))
         self.read_colours()
         self.show_colours()
 
@@ -156,13 +171,10 @@ class ColourPicker(tk.Tk):
                 self.colours[colour] = set()
             self.colours[colour].add(cl[3])
 
-    def show_colours(self, sortby='html'):
+    def show_colours(self, sortby='hsv'):
         """
-        TODO add sort buttons to top of window
-        sortby options -
-        html = alpha by html hex value (same as rgb)
-        TODO [rgb] = red,green,blue values (TODO in order listed)
-        TODO [hsv] = hue,saturation,value (TODO in order listed)
+        sortby options - rgb, hsv
+        other combinations don't seem worthwhile
         """
         if hasattr(self, 'colour_grid'):
             self.colour_grid.grid_forget()
@@ -172,8 +184,11 @@ class ColourPicker(tk.Tk):
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
 
-        # TODO sort here
-        sorted_cols = sorted(self.colours)
+        if sortby == 'hsv':
+            sorted_cols = sorted(self.colours, key=sort_hsv)
+        else:
+            # key is rgb in hex
+            sorted_cols = sorted(self.colours)
         for i,c in enumerate(sorted_cols):
             row = i // NUM_COLS
             col = i % NUM_COLS
